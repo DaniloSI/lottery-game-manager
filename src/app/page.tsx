@@ -1,112 +1,295 @@
-import Image from "next/image";
+"use client";
+
+import { GearIcon } from "@radix-ui/react-icons";
+import Link from "next/link";
+import { descend, prop, sort, sum } from "ramda";
+import React, { useState } from "react";
+
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import useCardsStore, { GamesTypes } from "@/store/useCardsStore";
+import countGames from "@/utils/countGames";
+
+const types = [
+  {
+    value: "Mega-Sena",
+    label: "Mega-Sena",
+  },
+  {
+    value: "Lotofácil",
+    label: "Lotofácil",
+  },
+];
+
+type Result = {
+  matchesSize: number;
+  matches: number[];
+  game: number[];
+};
 
 export default function Home() {
+  const [inputSortedTen, setInputSortedTen] = useState<string>("");
+  const [result, setResult] = useState<Result[]>([]);
+  const { cards } = useCardsStore();
+  const [type, setType] = useState<GamesTypes | undefined>();
+  const [competition, setCompetition] = useState<number | undefined>();
+
+  function compareResult() {
+    const sortedTen = new Set(
+      inputSortedTen
+        .replaceAll(" ", "")
+        .split(",")
+        .map((ten) => parseInt(ten)),
+    );
+
+    const result = [] as Result[];
+
+    const games = cards
+      .filter((c) => c.type === type && c.competition === competition)
+      .flatMap((card) => card.games.map((game) => game.ten));
+
+    for (const game of games) {
+      const matches = sortedTen.intersection(new Set(game));
+
+      result.push({
+        matchesSize: matches.size,
+        matches: Array.from(matches),
+        game,
+      });
+    }
+
+    setResult(result);
+  }
+
+  const countedGames = countGames(cards);
+
+  const sortResultByMatchesSize = sort<Result>(descend(prop("matchesSize")));
+
+  const competitions = Array.from(
+    new Set(
+      countedGames
+        .filter((c) => c.type === type)
+        .map((c) => c.competition.toString()),
+    ),
+  );
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
+    <main>
+      <div className="p-4">
+        <h1 className="mb-4 text-center">Loteria</h1>
+        <Tabs defaultValue="account" className="flex flex-col justify-center">
+          <TabsList className="m-auto w-fit">
+            <TabsTrigger value="account">
+              Meus jogos ({sum(countedGames.map((game) => game.gameCount))})
+            </TabsTrigger>
+            <TabsTrigger value="password">Conferir resultado</TabsTrigger>
+          </TabsList>
+          <TabsContent value="account">
+            {countedGames.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-center">Tipo</TableHead>
+                    <TableHead className="text-center">Concurso</TableHead>
+                    <TableHead className="text-center">Qtd dezenas</TableHead>
+                    <TableHead className="text-center">Qtd jogos</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {countedGames.map(
+                    ({ type, competition, tenCount, gameCount }) => (
+                      <TableRow key={`${type}-${competition}-${tenCount}`}>
+                        <TableCell className="text-center">{type}</TableCell>
+                        <TableCell className="text-center">
+                          {competition}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {tenCount}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {gameCount}
+                        </TableCell>
+                      </TableRow>
+                    ),
+                  )}
+                </TableBody>
+              </Table>
+            ) : (
+              <p className="my-6 text-center">Nenhum jogo cadastrado.</p>
+            )}
 
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
+            <div className="mt-4 flex justify-center">
+              <Button asChild>
+                <Link href="/manage">
+                  <GearIcon /> Gerenciar jogos
+                </Link>
+              </Button>
+            </div>
+          </TabsContent>
 
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
+          <TabsContent value="password">
+            <h2 className="my-4 text-center">Conferir resultado</h2>
 
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid w-full max-w-sm items-center gap-1.5">
+                <Label htmlFor="gameType">
+                  Tipo de jogo <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                  onValueChange={(value) => setType(value as GamesTypes)}
+                  value={type}
+                >
+                  <SelectTrigger className="w-full" id="gameType">
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {types.map((gameType) => (
+                        <SelectItem key={gameType.value} value={gameType.value}>
+                          {gameType.label}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
 
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore the Next.js 13 playground.
-          </p>
-        </a>
+              <div className="grid w-full max-w-sm items-center gap-1.5">
+                <Label htmlFor="competition">
+                  Concurso <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                  onValueChange={(value) => setCompetition(parseInt(value))}
+                  value={competition?.toString() ?? ""}
+                  disabled={competitions.length === 0}
+                >
+                  <SelectTrigger className="w-full" id="gameType">
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {competitions.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
+            <div className="mt-4 grid w-full max-w-sm items-center gap-1.5">
+              <Label htmlFor="competition">
+                Dezenas sorteadas <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                type="text"
+                id="competition"
+                placeholder="Ex.: 1, 2, 3, 4, 5, 6"
+                inputMode="decimal"
+                value={inputSortedTen}
+                onChange={(e) => setInputSortedTen(e.target.value)}
+              />
+            </div>
+
+            <div className="my-4 flex justify-center">
+              <Dialog
+                onOpenChange={(open) => {
+                  if (open) {
+                    compareResult();
+                  } else {
+                    setResult([]);
+                  }
+                }}
+              >
+                <DialogTrigger asChild>
+                  <Button disabled={!type || !competition || !inputSortedTen}>
+                    Conferir resultado
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Resultado</DialogTitle>
+                    <DialogDescription>
+                      {type} / Concurso #{competition}
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-center">Acertos</TableHead>
+                        <TableHead className="text-center">Jogo</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {sortResultByMatchesSize(result).map((result) => (
+                        <TableRow key={result.game.join("-")}>
+                          <TableCell className="text-center">
+                            {result.matchesSize}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {result.game.map((ten, i) => (
+                              <React.Fragment key={ten}>
+                                <span
+                                  className={
+                                    result.matches.some((m) => m === ten)
+                                      ? "text-green-500"
+                                      : ""
+                                  }
+                                >
+                                  {ten}
+                                </span>
+                                {i < result.game.length - 1 && <span> - </span>}
+                              </React.Fragment>
+                            ))}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+
+                  <DialogFooter>
+                    <DialogClose asChild>
+                      <Button type="button" variant="secondary">
+                        Fechar
+                      </Button>
+                    </DialogClose>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </main>
   );
