@@ -1,8 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export type GamesTypes = "mega-sena" | "loto-facil";
-
 export type Game = {
   id: number;
   ten: number[];
@@ -11,7 +9,7 @@ export type Game = {
 export type Card = {
   id: string;
   cardNumber: number;
-  type: GamesTypes;
+  type: string;
   competition: number;
   games: Game[];
 };

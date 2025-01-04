@@ -35,19 +35,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import useCardsStore, { GamesTypes } from "@/store/useCardsStore";
+import useCardsStore from "@/store/useCardsStore";
+import { types } from "@/utils/constants";
 import countGames from "@/utils/countGames";
-
-const types = [
-  {
-    value: "Mega-Sena",
-    label: "Mega-Sena",
-  },
-  {
-    value: "Lotofácil",
-    label: "Lotofácil",
-  },
-];
 
 type Result = {
   matchesSize: number;
@@ -59,7 +49,7 @@ export default function Home() {
   const [inputSortedTen, setInputSortedTen] = useState<string>("");
   const [result, setResult] = useState<Result[]>([]);
   const { cards } = useCardsStore();
-  const [type, setType] = useState<GamesTypes | undefined>();
+  const [type, setType] = useState<string | undefined>();
   const [competition, setCompetition] = useState<number | undefined>();
 
   function compareResult() {
@@ -163,18 +153,15 @@ export default function Home() {
                 <Label htmlFor="gameType">
                   Tipo de jogo <span className="text-red-500">*</span>
                 </Label>
-                <Select
-                  onValueChange={(value) => setType(value as GamesTypes)}
-                  value={type}
-                >
+                <Select onValueChange={(value) => setType(value)} value={type}>
                   <SelectTrigger className="w-full" id="gameType">
                     <SelectValue placeholder="Selecione..." />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
                       {types.map((gameType) => (
-                        <SelectItem key={gameType.value} value={gameType.value}>
-                          {gameType.label}
+                        <SelectItem key={gameType} value={gameType}>
+                          {gameType}
                         </SelectItem>
                       ))}
                     </SelectGroup>
@@ -236,7 +223,7 @@ export default function Home() {
                     Conferir resultado
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
+                <DialogContent className="flex max-h-dvh flex-col sm:max-w-[425px]">
                   <DialogHeader>
                     <DialogTitle>Resultado</DialogTitle>
                     <DialogDescription>
@@ -244,7 +231,7 @@ export default function Home() {
                     </DialogDescription>
                   </DialogHeader>
 
-                  <Table>
+                  <Table className="overflow-y-scroll">
                     <TableHeader>
                       <TableRow>
                         <TableHead className="text-center">Acertos</TableHead>

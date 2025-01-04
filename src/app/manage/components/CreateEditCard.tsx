@@ -32,7 +32,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Card, Game, GamesTypes } from "@/store/useCardsStore";
+import { Card, Game } from "@/store/useCardsStore";
+import { types } from "@/utils/constants";
 
 export type CreatedCard = Pick<Card, "type" | "competition" | "games">;
 
@@ -42,23 +43,12 @@ type CreateEditCardProps = {
   card?: Card;
 };
 
-const types = [
-  {
-    value: "Mega-Sena",
-    label: "Mega-Sena",
-  },
-  {
-    value: "Lotofácil",
-    label: "Lotofácil",
-  },
-];
-
 export default function CreateEditCard({
   card,
   mode,
   onSave,
 }: CreateEditCardProps) {
-  const [type, setType] = useState<GamesTypes | undefined>(card?.type);
+  const [type, setType] = useState<string | undefined>(card?.type);
   const [competition, setCompetition] = useState<number | undefined>(
     card?.competition,
   );
@@ -113,7 +103,7 @@ export default function CreateEditCard({
                   </Label>
 
                   <Select
-                    onValueChange={(value) => setType(value as GamesTypes)}
+                    onValueChange={(value) => setType(value)}
                     value={type}
                   >
                     <SelectTrigger className="w-full" id="gameType">
@@ -122,11 +112,8 @@ export default function CreateEditCard({
                     <SelectContent>
                       <SelectGroup>
                         {types.map((gameType) => (
-                          <SelectItem
-                            key={gameType.value}
-                            value={gameType.value}
-                          >
-                            {gameType.label}
+                          <SelectItem key={gameType} value={gameType}>
+                            {gameType}
                           </SelectItem>
                         ))}
                       </SelectGroup>
